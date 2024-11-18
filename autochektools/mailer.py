@@ -222,6 +222,7 @@ class Mail:
         df = pd.DataFrame(rows)
         return Mail.df_to_html(df)
     
+
     def send_mail_with_excel(
         self,
         recipients: list,
@@ -246,20 +247,34 @@ class Mail:
             dict: A dictionary with the result of the operation.
         """
         excel_file = BytesIO()
+        temp_filepath = None
         try:
             with pd.ExcelWriter(excel_file, engine="xlsxwriter") as writer:
                 for sheet_name, dataframe in dataframes.items():
                     dataframe.to_excel(writer, index=False, sheet_name=sheet_name)
             excel_file.seek(0)
 
-            attachments = [self._save_excel_to_temp(excel_file, excel_filename)]
-            return self.send_mail(
-                recipients, subject, body, html, attachments=attachments
+            # Save the file temporarily and capture the file path
+            temp_filepath = self._save_excel_to_temp(excel_file, excel_filename)
+            
+            # Send the email
+            result = self.send_mail(
+                recipients, subject, body, html, attachments=[temp_filepath]
             )
+
+            return result
         except Exception as e:
             return {"success": False, "error": f"Failed to create/send Excel file: {str(e)}"}
         finally:
+            # Delete the temporary file after sending email
+            if temp_filepath and os.path.exists(temp_filepath):
+                try:
+                    os.remove(temp_filepath)
+                except Exception as delete_error:
+                    print(f"Failed to delete temporary file: {str(delete_error)}")
+            
             excel_file.close()
+
 
     @staticmethod
     def _save_excel_to_temp(excel_file: BytesIO, filename: str) -> str:
