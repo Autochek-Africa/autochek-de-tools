@@ -8,7 +8,9 @@ setup(
     author='Vincent Omondi',
     author_email='vincent.o@autochek.africa',
     license='unlicense',
-    install_requires=["numpy", "google-api-core", "google-auth", "google-cloud-core", "google-cloud-storage"],
+    install_requires=[
+        "numpy", "google-api-core", "google-auth", "google-cloud-core", 
+        "google-cloud-storage", "google-auth-oauthlib"],
     packages=['autochektools'],
     zip_safe=False
 )
