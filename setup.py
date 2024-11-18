@@ -10,7 +10,7 @@ setup(
     license='unlicense',
     install_requires=[
         "numpy", "google-api-core", "google-auth", "google-cloud-core", 
-        "google-cloud-storage", "google-auth-oauthlib", "slack-sdk"],
+        "google-cloud-storage", "google-auth-oauthlib", "slack-sdk", "xlsxwriter"],
     packages=['autochektools'],
     zip_safe=False
 )
