@@ -254,10 +254,8 @@ class Mail:
                     dataframe.to_excel(writer, index=False, sheet_name=sheet_name)
             excel_file.seek(0)
 
-            # Save the file temporarily and capture the file path
             temp_filepath = self._save_excel_to_temp(excel_file, excel_filename)
             
-            # Send the email
             result = self.send_mail(
                 recipients, subject, body, html, attachments=[temp_filepath]
             )

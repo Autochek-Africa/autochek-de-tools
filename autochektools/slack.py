@@ -58,7 +58,6 @@ class Notification:
         :return: Formatted message as a string
         """
         if isinstance(self.message, dict):
-            # Format dict into a pretty JSON-like string
             return json.dumps(self.message, indent=2)
         return self.message
     
@@ -85,8 +84,6 @@ class Notification:
         """
         if not data:
             return "*No data available.*"
-
-        # Determine table headers from keys (if data is dict) or use provided headers
         if isinstance(data[0], dict):
             headers = headers or list(data[0].keys())
             rows = [[str(row.get(h, '')) for h in headers] for row in data]
@@ -95,24 +92,20 @@ class Notification:
         else:
             raise ValueError("Data should be a list of dictionaries or a list of lists")
 
-        # Calculate column widths dynamically
         column_widths = [len(header) for header in headers]
         for row in rows:
             for i, cell in enumerate(row):
                 column_widths[i] = max(column_widths[i], len(cell))
 
-        # Function to format a single row
         def format_row(row):
             return " | ".join(cell.ljust(column_widths[i]) for i, cell in enumerate(row))
 
-        # Build the table
         table = []
         table.append(format_row(headers))
         table.append("-+-".join('-' * width for width in column_widths))
         for row in rows:
             table.append(format_row(row))
 
-        # Wrap table in Slack code block formatting
         return f"```\n" + "\n".join(table) + "\n```"
 
     def build_payload(self, data_table=None):
