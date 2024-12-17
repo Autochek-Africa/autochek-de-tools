@@ -74,12 +74,60 @@ class Notification:
             footer = f"{footer} Notifying: {mentions}"
         return footer
 
-    def build_payload(self):
+    def format_table(self, data, headers=None):
+        """
+        Format a list of dictionaries (or list of lists) into a table-like string for Slack.
+        Ensures proper column alignment using code block formatting.
+        
+        :param data: List of dictionaries (or list of lists) representing rows of the table.
+        :param headers: Optional list of headers for the table.
+        :return: A table-like formatted string wrapped in Slack code block for alignment.
+        """
+        if not data:
+            return "*No data available.*"
+
+        # Determine table headers from keys (if data is dict) or use provided headers
+        if isinstance(data[0], dict):
+            headers = headers or list(data[0].keys())
+            rows = [[str(row.get(h, '')) for h in headers] for row in data]
+        elif isinstance(data[0], list):
+            rows = data
+        else:
+            raise ValueError("Data should be a list of dictionaries or a list of lists")
+
+        # Calculate column widths dynamically
+        column_widths = [len(header) for header in headers]
+        for row in rows:
+            for i, cell in enumerate(row):
+                column_widths[i] = max(column_widths[i], len(cell))
+
+        # Function to format a single row
+        def format_row(row):
+            return " | ".join(cell.ljust(column_widths[i]) for i, cell in enumerate(row))
+
+        # Build the table
+        table = []
+        table.append(format_row(headers))
+        table.append("-+-".join('-' * width for width in column_widths))
+        for row in rows:
+            table.append(format_row(row))
+
+        # Wrap table in Slack code block formatting
+        return f"```\n" + "\n".join(table) + "\n```"
+
+    def build_payload(self, data_table=None):
         """
         Build the payload in a Slack-like attachment format.
+        Optionally includes a table-like message.
         
+        :param data_table: Optional table data to include in the message.
         :return: Payload as a dictionary
         """
+        formatted_message = self.format_message()
+        if data_table:
+            table_text = self.format_table(data_table)
+            formatted_message += f"\n\n{table_text}"
+        
         return {
             "text": f"{self.get_emoji()} *Pipeline Notification*",
             "attachments": [
@@ -88,21 +136,23 @@ class Notification:
                     "fields": [
                         {"title": "Pipeline Name", "value": self.pipeline_name, "short": True},
                         {"title": "Status", "value": self.status.capitalize(), "short": True},
-                        {"title": "Message", "value": self.format_message(), "short": False},
+                        {"title": "Message", "value": formatted_message, "short": False},
                         {"title": "Timestamp", "value": self.timestamp, "short": True},
                     ],
                     "footer": self.get_footer(),
                 }
             ],
         }
-    
-    def send_to_slack(self, channel_id):
+
+    def send_to_slack(self, channel_id, data_table=None):
         """
         Send the notification to a Slack channel.
+        Optionally includes a table-like message.
         
-        :param channel_id: The Slack channel ID where the message will be posted
+        :param channel_id: The Slack channel ID where the message will be posted.
+        :param data_table: Optional table data to include in the message.
         """
-        payload = self.build_payload()
+        payload = self.build_payload(data_table=data_table)
         try:
             response = self.slack_client.chat_postMessage(
                 channel=channel_id,
